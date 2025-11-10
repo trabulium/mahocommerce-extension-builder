@@ -426,12 +426,12 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Grid extends Mage_Admi
         return $this;
     }}
 
-    public function getRowUrl(Varien_Object $row): string
+    public function getRowUrl($row)
     {{
         return $this->getUrl('*/*/edit', ['id' => $row->getId()]);
     }}
 
-    public function getGridUrl(): string
+    public function getGridUrl()
     {{
         return $this->getUrl('*/*/grid', ['_current' => true]);
     }}
@@ -480,7 +480,7 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
         ";
     }}
 
-    public function getHeaderText(): string
+    public function getHeaderText()
     {{
         if (Mage::registry('current_{entity_name}')->getId()) {{
             return Mage::helper('{namespace.lower()}_{module.lower()}')->__("Edit {entity_class}");
