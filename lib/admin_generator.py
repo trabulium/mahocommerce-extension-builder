@@ -578,6 +578,25 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
         form_fields += """
         ]);"""
 
+    # Add multistore selector if enabled
+    if entity.get('multi_store', False):
+        form_fields += f"""
+        // Multistore selector
+        if (!Mage::app()->isSingleStoreMode()) {{
+            $fieldset->addField('store_id', 'multiselect', [
+                'name' => 'stores[]',
+                'label' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('Store View'),
+                'title' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('Store View'),
+                'required' => true,
+                'values' => Mage::getSingleton('adminhtml/system_store')->getStoreValuesForForm(false, true),
+            ]);
+        }} else {{
+            $fieldset->addField('store_id', 'hidden', [
+                'name' => 'stores[]',
+                'value' => Mage::app()->getStore(true)->getId(),
+            ]);
+        }}"""
+
     form_content = f"""<?php
 /**
  * Maho
