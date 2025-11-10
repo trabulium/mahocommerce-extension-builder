@@ -364,12 +364,45 @@ Does this sound good? Any changes?"
 Claude: [Generates JSON config based on confirmed design]
 ```
 
+### 3. Generate the Module
+
+Once the user confirms the design, use the `generate-module.py` script:
+
+**CRITICAL: Always use the Python script - do NOT generate files manually!**
+
+```bash
+python3 generate-module.py config.json [Namespace]
+```
+
+**Workflow:**
+1. Write the JSON config to a temporary file (e.g., `module-config.json`)
+2. Run `generate-module.py` with the config file
+3. The script will generate all files automatically
+4. Run `composer dump-autoload` and `./maho cache:flush`
+5. Report what was created to the user
+
+**Example:**
+```bash
+# 1. Create config file (use Write tool)
+# config.json contains the module configuration
+
+# 2. Generate module
+python3 .claude/skills/mahocommerce-builder/generate-module.py module-config.json Company
+
+# 3. Update autoloader and clear cache
+COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload
+./maho cache:flush
+```
+
+The script will output exactly what files were created and where to access them in the admin.
+
 **Common Mistakes to Avoid:**
 - ❌ Generating JSON without asking about relationships
 - ❌ Forgetting to suggest many-to-many relationships for taxonomies (categories, tags)
 - ❌ Not asking which fields should appear in grids
 - ❌ Missing author FK when creating content entities
 - ❌ Using generic module names that conflict with core Maho modules (e.g., "Blog", "News")
+- ❌ **NEVER manually create module files - ALWAYS use generate-module.py!**
 - ✅ Think through the full data model and present it for approval first!
 
 **Module Naming:**
