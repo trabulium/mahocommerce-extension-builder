@@ -2,6 +2,17 @@
 
 A Claude Code skill that builds MahoCommerce extensions with 100% accuracy using deep introspection of the actual codebase.
 
+## ⚠️ Required First Step
+
+**Before using this skill, you MUST run introspection on your MahoCommerce installation:**
+
+```bash
+cd /path/to/your/maho/installation
+python3 .claude/skills/mahocommerce-builder/introspect.py . .claude/skills/mahocommerce-builder
+```
+
+This analyzes your installation and generates the `analysis/` files needed by the skill. Without this step, the skill cannot generate code.
+
 ## What Makes This Different?
 
 Unlike traditional code generators that guess patterns, this skill:
