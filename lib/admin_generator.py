@@ -623,6 +623,9 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
             'wysiwyg' => true,
             'config' => Mage::getSingleton('cms/wysiwyg_config')->getConfig(),"""
             else:
+                # Check if value needs quoting (strings that don't start with special chars)
+                if isinstance(opt_value, str) and not opt_value.startswith(("'", '"', '$', 'Mage::', 'array(')):
+                    opt_value = f"'{opt_value}'"
                 form_fields += f"""
             '{opt_key}' => {opt_value},"""
 
