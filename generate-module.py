@@ -230,11 +230,12 @@ def generate_module(config):
 
     for i, entity in enumerate(entities):
         entity_name = entity['name'].lower()
-        entity_title = entity.get('title', entity['name'])
+        entity_title = entity.get('title', entity['name'].replace('_', ' ').title())
+        entity_label = entity.get('label', f"Manage {entity_title}")
         sort_order = (i + 1) * 10
 
         menu_items += f"""                    <{entity_name} translate="title">
-                        <title>{entity_title}</title>
+                        <title>{entity_label}</title>
                         <action>adminhtml/{entity_name}/index</action>
                         <sort_order>{sort_order}</sort_order>
                     </{entity_name}>

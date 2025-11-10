@@ -715,19 +715,19 @@ def generate_adminhtml_layout_handles(namespace, module, entity_name, has_wysiwy
         </reference>"""
 
     return f"""
-    <adminhtml_{module}_{entity_name}_index>
+    <adminhtml_{entity_name}_index>
         <reference name="content">
             <block type="{namespace}_{module}/adminhtml_{entity_name}" name="{entity_name}" />
         </reference>
-    </adminhtml_{module}_{entity_name}_index>
+    </adminhtml_{entity_name}_index>
 
-    <adminhtml_{module}_{entity_name}_grid>
+    <adminhtml_{entity_name}_grid>
         <block name="root" type="{namespace}_{module}/adminhtml_{entity_name}_grid" />
-    </adminhtml_{module}_{entity_name}_grid>
+    </adminhtml_{entity_name}_grid>
 
-    <adminhtml_{module}_{entity_name}_edit>{wysiwyg_block}
+    <adminhtml_{entity_name}_edit>{wysiwyg_block}
         <reference name="content">
             <block type="{namespace}_{module}/adminhtml_{entity_name}_edit" name="{entity_name}.edit" />
         </reference>
-    </adminhtml_{module}_{entity_name}_edit>
+    </adminhtml_{entity_name}_edit>
 """
