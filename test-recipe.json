@@ -1,0 +1,121 @@
+{
+  "module": "Recipe",
+  "namespace": "Maho",
+  "version": "24.11.0",
+  "description": "Recipe management module for Maho",
+  "frontend_route": "recipes",
+  "entities": [
+    {
+      "name": "recipe",
+      "label": "Recipes",
+      "table": "recipe",
+      "fields": [
+        {
+          "name": "recipe_id",
+          "type": "int",
+          "primary": true,
+          "nullable": false,
+          "label": "Recipe ID"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "length": 255,
+          "nullable": false,
+          "label": "Recipe Name",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "label": "Description",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "ingredients",
+          "type": "text",
+          "nullable": true,
+          "label": "Ingredients",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "instructions",
+          "type": "text",
+          "nullable": true,
+          "label": "Instructions",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "prep_time",
+          "type": "int",
+          "nullable": true,
+          "label": "Prep Time (minutes)",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "cook_time",
+          "type": "int",
+          "nullable": true,
+          "label": "Cook Time (minutes)",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "status",
+          "type": "tinyint",
+          "nullable": false,
+          "label": "Status",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false,
+          "label": "Created At",
+          "admin": {
+            "grid": true,
+            "form": false
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false,
+          "label": "Updated At",
+          "admin": {
+            "grid": false,
+            "form": false
+          }
+        }
+      ],
+      "admin": {
+        "menu": true,
+        "acl": true
+      },
+      "frontend": {
+        "enabled": true
+      }
+    }
+  ]
+}
