@@ -235,7 +235,7 @@ def generate_module(config):
 
         menu_items += f"""                    <{entity_name} translate="title">
                         <title>{entity_title}</title>
-                        <action>adminhtml/{module.lower()}_{entity_name}/index</action>
+                        <action>adminhtml/{entity_name}/index</action>
                         <sort_order>{sort_order}</sort_order>
                     </{entity_name}>
 """
