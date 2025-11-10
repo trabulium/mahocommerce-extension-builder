@@ -527,6 +527,17 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
         # Image upload detection
         elif field_name in ['image', 'avatar', 'photo', 'thumbnail'] or '_image' in field_name:
             field_type = 'image'
+        # Multiselect detection - fields ending in _ids (plural)
+        elif field_name.endswith('_ids'):
+            # Extract related entity name (category_ids -> category, tag_ids -> tag)
+            related_entity = field_name[:-4]  # Remove '_ids'
+            related_class = related_entity.capitalize()
+
+            # Check if this entity exists in all_entities
+            if any(e['name'] == related_entity for e in all_entities):
+                field_type = 'multiselect'
+                field_options['values'] = f"Mage::getResourceModel('{namespace.lower()}_{module.lower()}/{related_entity}_collection')->toOptionArray()"
+                field_options['name'] = f'{field_name}[]'
         # Relationship detection - fields ending in _id (except status_id)
         elif field_name.endswith('_id') and field_name != 'status_id':
             # Extract related entity name (author_id -> author, category_id -> category)
@@ -545,8 +556,42 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
         elif field_name == 'status':
             field_type = 'select'
             field_options['values'] = f"{namespace}_{module}_Model_{entity_class}::getAvailableStatuses()"
-        # Date/datetime fields
-        elif field_db_type in ['datetime', 'date']:
+        # Color picker fields
+        elif field_name in ['color', 'colour', 'background_color', 'text_color'] or field_name.endswith('_color'):
+            field_type = 'text'
+            field_options['class'] = "'jscolor {hash:true}'"
+        # Email fields
+        elif field_name in ['email', 'email_address'] or field_name.endswith('_email'):
+            field_type = 'text'
+            field_options['class'] = "'validate-email'"
+        # URL fields
+        elif field_name in ['url', 'link', 'website'] or field_name.endswith('_url') or field_name.endswith('_link'):
+            field_type = 'text'
+            field_options['class'] = "'validate-url'"
+        # Price/money fields
+        elif field_name in ['price', 'cost', 'amount'] or field_name.endswith('_price') or field_name.endswith('_cost'):
+            field_type = 'text'
+            field_options['class'] = "'validate-number'"
+        # Numeric fields (int/decimal)
+        elif field_db_type in ['int', 'integer', 'decimal', 'float'] and field_name not in ['status', 'position', 'sort_order']:
+            field_type = 'text'
+            field_options['class'] = "'validate-number'"
+        # File upload detection
+        elif field_name in ['file', 'attachment', 'document', 'pdf'] or field_name.endswith('_file'):
+            field_type = 'file'
+        # Time fields
+        elif field_db_type == 'time':
+            field_type = 'time'
+            field_options['image'] = "$this->getSkinUrl('images/grid-cal.gif')"
+            field_options['format'] = "'HH:mm:ss'"
+        # Datetime fields (with time picker)
+        elif field_db_type == 'datetime' or field_name.endswith('_at'):
+            field_type = 'datetime'
+            field_options['image'] = "$this->getSkinUrl('images/grid-cal.gif')"
+            field_options['format'] = "'Y-MM-dd HH:mm:ss'"
+            field_options['time'] = 'true'
+        # Date fields (date only, no time)
+        elif field_db_type == 'date':
             field_type = 'date'
             field_options['image'] = "$this->getSkinUrl('images/grid-cal.gif')"
             field_options['format'] = "'Y-MM-dd'"
@@ -555,16 +600,22 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
             field_type = 'textarea'
             field_options['style'] = 'height:100px'
 
+        # Get field name (may be overridden for multiselect)
+        actual_field_name = field_options.get('name', f"'{field_name}'")
+
         form_fields += f"""
         $fieldset->addField('{field_name}', '{field_type}', [
-            'name' => '{field_name}',
+            'name' => {actual_field_name},
             'label' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('{field_label}'),
             'title' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('{field_label}'),
             'required' => {str(not field.get('nullable', True)).lower()},"""
 
         # Add field-specific options
         for opt_key, opt_value in field_options.items():
-            if opt_key == 'values':
+            if opt_key == 'name':
+                # Already handled above
+                continue
+            elif opt_key == 'values':
                 form_fields += f"""
             '{opt_key}' => {opt_value},"""
             elif opt_key == 'wysiwyg':
