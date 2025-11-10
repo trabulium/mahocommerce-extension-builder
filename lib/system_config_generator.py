@@ -5,7 +5,7 @@ Copyright (c) 2025 Maho (https://mahocommerce.com)
 """
 
 
-def present_system_config_suggestions(namespace: str, module_name: str, entities: list) -> str:
+def present_system_config_suggestions(namespace: str, module_name: str, entities: list) -> dict:
     """
     Present suggestions for system configuration
 
@@ -15,14 +15,16 @@ def present_system_config_suggestions(namespace: str, module_name: str, entities
         entities: List of entity configurations
 
     Returns:
-        Formatted suggestions text or None to skip system config
+        Configuration dict for system.xml generation
     """
-    # Return None to indicate no system config suggestions for now
-    # This can be expanded later
-    return None
+    # Return config dict to enable system.xml generation
+    return {
+        'label': module_name,
+        'enabled': True
+    }
 
 
-def generate_system_xml(namespace: str, module_name: str, config: dict) -> str:
+def generate_system_xml(namespace: str, module_name: str, config: dict, code_path, files_created: list) -> None:
     """
     Generate system.xml configuration
 
@@ -30,10 +32,12 @@ def generate_system_xml(namespace: str, module_name: str, config: dict) -> str:
         namespace: Module namespace
         module_name: Module name
         config: Module configuration
-
-    Returns:
-        XML string for system.xml
+        code_path: Path to module root
+        files_created: List to append created files to
     """
+    from pathlib import Path
+    from datetime import datetime
+    year = datetime.now().year
     module_key = f'{namespace.lower()}_{module_name.lower()}'
     module_label = config.get('label', module_name)
 
@@ -120,14 +124,14 @@ def generate_system_xml(namespace: str, module_name: str, config: dict) -> str:
 
     fields_xml = '\n'.join(fields)
 
-    return f'''<?xml version="1.0"?>
+    system_xml_content = f'''<?xml version="1.0"?>
 <!--
 /**
  * Maho
  *
  * @category   {namespace}
  * @package    {namespace}_{module_name}
- * @copyright  Copyright (c) 2025 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) {year} Maho (https://mahocommerce.com)
  */
 -->
 <config>
@@ -153,3 +157,10 @@ def generate_system_xml(namespace: str, module_name: str, config: dict) -> str:
     </sections>
 </config>
 '''
+
+    # Write system.xml file
+    etc_path = code_path / "etc"
+    etc_path.mkdir(parents=True, exist_ok=True)
+    system_xml_file = etc_path / "system.xml"
+    system_xml_file.write_text(system_xml_content)
+    files_created.append(str(system_xml_file))
