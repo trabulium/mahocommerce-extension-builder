@@ -88,6 +88,10 @@ def apply_defaults(config: dict) -> dict:
             if 'enabled' not in entity['frontend']:
                 entity['frontend']['enabled'] = False
 
+            # Auto-enable multi_store for frontend entities
+            if entity['frontend']['enabled'] and 'multi_store' not in entity:
+                entity['multi_store'] = True
+
             # Process relationships
             if 'relationships' in entity:
                 for rel in entity['relationships']:

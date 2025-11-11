@@ -662,6 +662,17 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
 
 class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit_Form extends Mage_Adminhtml_Block_Widget_Form
 {{
+    protected function _prepareLayout(): static
+    {{
+        parent::_prepareLayout();
+        if (Mage::getSingleton('cms/wysiwyg_config')->isEnabled()) {{
+            if ($head = $this->getLayout()->getBlock('head')) {{
+                $head->setCanLoadWysiwyg(true);
+            }}
+        }}
+        return $this;
+    }}
+
     protected function _prepareForm(): static
     {{
         $model = Mage::registry('current_{entity_name}');
@@ -713,9 +724,7 @@ def generate_adminhtml_layout_handles(namespace, module, entity_name, has_wysiwy
     wysiwyg_block = ""
     if has_wysiwyg:
         wysiwyg_block = """
-        <reference name="head">
-            <action method="setCanLoadTinyMce"><can_load>1</can_load></action>
-        </reference>"""
+        <update handle="editor"/>"""
 
     return f"""
     <adminhtml_{entity_name}_index>

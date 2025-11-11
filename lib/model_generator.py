@@ -135,6 +135,81 @@ def _generate_collection(namespace, module, entity_name, entity_class, multi_sto
     from datetime import datetime
     year = datetime.now().year
 
+    # Generate field mapping if multi_store is enabled
+    field_mapping = ""
+    if multi_store:
+        field_mapping = f"""
+        $this->_map['fields']['{entity_name}_id'] = 'main_table.{entity_name}_id';
+        $this->_map['fields']['store']     = 'store_table.store_id';"""
+
+    # Generate store filter methods if multi_store is enabled
+    store_filter_methods = ""
+    if multi_store:
+        store_filter_methods = f"""
+    /**
+     * Add filter by store
+     *
+     * @param int|Mage_Core_Model_Store $store
+     * @param bool $withAdmin
+     * @return $this
+     */
+    public function addStoreFilter($store, $withAdmin = true)
+    {{
+        if (!$this->getFlag('store_filter_added')) {{
+            if ($store instanceof Mage_Core_Model_Store) {{
+                $store = [$store->getId()];
+            }}
+
+            if (!is_array($store)) {{
+                $store = [$store];
+            }}
+
+            if ($withAdmin) {{
+                $store[] = Mage_Core_Model_App::ADMIN_STORE_ID;
+            }}
+
+            $this->addFilter('store', ['in' => $store], 'public');
+        }}
+        return $this;
+    }}
+
+    /**
+     * Join store relation table if there is store filter
+     */
+    #[\\Override]
+    protected function _renderFiltersBefore()
+    {{
+        if ($this->getFilter('store')) {{
+            $this->getSelect()->join(
+                ['store_table' => $this->getTable('{namespace.lower()}_{module.lower()}/{entity_name}_store')],
+                'main_table.{entity_name}_id = store_table.{entity_name}_id',
+                [],
+            )->group('main_table.{entity_name}_id');
+
+            /*
+             * Allow analytic functions usage because of one field grouping
+             */
+            $this->_useAnalyticFunction = true;
+        }}
+        return parent::_renderFiltersBefore();
+    }}
+
+    /**
+     * Get SQL for get record count.
+     * Extra GROUP BY strip added.
+     *
+     * @return Maho\\Db\\Select
+     */
+    #[\\Override]
+    public function getSelectCountSql()
+    {{
+        $countSelect = parent::getSelectCountSql();
+
+        $countSelect->reset(Maho\\Db\\Select::GROUP);
+
+        return $countSelect;
+    }}"""
+
     return f"""<?php
 /**
  * Maho
@@ -154,7 +229,7 @@ class {namespace}_{module}_Model_Resource_{entity_class}_Collection extends Mage
 {{
     protected function _construct(): void
     {{
-        $this->_init('{namespace.lower()}_{module.lower()}/{entity_name}');
+        $this->_init('{namespace.lower()}_{module.lower()}/{entity_name}');{field_mapping}
     }}
 
     /**
@@ -175,6 +250,6 @@ class {namespace}_{module}_Model_Resource_{entity_class}_Collection extends Mage
     public function toOptionHash(): array
     {{
         return $this->_toOptionHash('{entity_name}_id', 'name');
-    }}
+    }}{store_filter_methods}
 }}
 """

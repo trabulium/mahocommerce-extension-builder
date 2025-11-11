@@ -142,7 +142,7 @@ Analyzes your entities and automatically suggests relevant configuration:
 - Standard frontend routing
 - Configurable `<frontName>` with conflict detection
 - Module/controller/action URL structure
-- SEO-friendly URL rewrites for entities with `url_key` field
+- SEO-friendly URL support (see section below)
 
 #### Controllers
 - Index action (list view) with breadcrumbs
@@ -186,7 +186,170 @@ Analyzes your entities and automatically suggests relevant configuration:
 - Layout XML in `app/design/frontend/base/default/layout/`
 - Templates in `app/design/frontend/base/default/template/`
 
-### 8. **ACL & Permissions**
+### 11. **SEO-Friendly URL Support**
+
+#### Overview
+Entities with a `url_key` field automatically get SEO-friendly URL support. The module builder implements a hybrid approach that works within Maho's routing architecture.
+
+#### URL Patterns
+
+**Main Entity URLs** (using URL rewrites):
+- Pattern: `/{frontName}/{url_key}/`
+- Example: `/recipe/classic-spaghetti-carbonara/`
+- Implementation: Maho's core URL rewrite system
+- Works at root level because path doesn't match any controller
+
+**Related Entity URLs** (controller-based with url_key):
+- Pattern: `/{frontName}/{controller}/view/id/{url_key}/`
+- Example: `/recipe/cuisine/view/id/french/`
+- Example: `/recipe/author/view/id/marco-rossi/`
+- Implementation: Controllers accept url_key as `id` parameter
+- Necessary due to routing precedence (standard router processes these first)
+
+#### Why the Hybrid Approach?
+
+Maho's routing system processes URLs in this order:
+1. Standard router checks if URL matches `frontName/controller/action`
+2. URL rewrite router processes unmatched URLs
+
+This means:
+- `/recipe/classic-spaghetti-carbonara/` doesn't match any controller → URL rewrite works
+- `/recipe/cuisine/french/` matches frontName + controller → Standard router catches it first
+
+The solution: Controllers accept both numeric IDs and url_key values as the `id` parameter.
+
+#### Generated Code
+
+**Model URL Generation** (`Model/{Entity}.php`):
+```php
+public function getUrl(): string
+{
+    if ($this->getUrlKey()) {
+        // Main entity uses URL rewrite
+        return Mage::getUrl('{frontName}/' . $this->getUrlKey());
+
+        // Related entities use controller URLs
+        return Mage::getUrl('{frontName}/{entity}/view', ['id' => $this->getUrlKey()]);
+    }
+    return Mage::getUrl('{frontName}/{entity}/view', ['id' => $this->getId()]);
+}
+```
+
+**Controller URL Key Support** (`controllers/{Entity}Controller.php`):
+```php
+public function viewAction(): void
+{
+    $id = $this->getRequest()->getParam('id');
+    ${entity} = Mage::getModel('{alias}/{entity}');
+
+    if ($id) {
+        // Try loading by numeric ID first
+        ${entity}->load($id);
+
+        // If that didn't work, try as url_key
+        if (!${entity}->getId()) {
+            $collection = Mage::getResourceModel('{alias}/{entity}_collection')
+                ->addFieldToFilter('url_key', $id)
+                ->setPageSize(1);
+            ${entity} = $collection->getFirstItem();
+        }
+    }
+
+    if (!${entity}->getId()) {
+        $this->norouteAction();
+        return;
+    }
+    // ... rest of action
+}
+```
+
+**URL Rewrite Observers** (`Model/Observer/UrlRewrite.php`):
+```php
+public function generate{Entity}UrlRewrite($observer)
+{
+    ${entity} = $observer->getEvent()->get{Entity}();
+
+    if (!${entity}->getUrlKey()) {
+        return $this;
+    }
+
+    // Delete old rewrites
+    $collection = Mage::getResourceModel('core/url_rewrite_collection')
+        ->addFieldToFilter('id_path', '{alias}/{entity}/' . ${entity}->getId());
+
+    foreach ($collection as $rewrite) {
+        $rewrite->delete();
+    }
+
+    // Create new rewrite
+    Mage::getModel('core/url_rewrite')
+        ->setStoreId(${entity}->getStoreId())
+        ->setIdPath('{alias}/{entity}/' . ${entity}->getId())
+        ->setRequestPath('{frontName}/' . ${entity}->getUrlKey())
+        ->setTargetPath('{frontName}/index/view/id/' . ${entity}->getId())
+        ->save();
+
+    return $this;
+}
+```
+
+**Event Registration** (`etc/config.xml`):
+```xml
+<events>
+    <{alias}_{entity}_save_after>
+        <observers>
+            <{alias}_url_rewrite>
+                <class>{alias}/observer_urlRewrite</class>
+                <method>generate{Entity}UrlRewrite</method>
+            </{alias}_url_rewrite>
+        </observers>
+    </{alias}_{entity}_save_after>
+    <{alias}_{entity}_delete_after>
+        <observers>
+            <{alias}_url_rewrite_delete>
+                <class>{alias}/observer_urlRewrite</class>
+                <method>delete{Entity}UrlRewrite</method>
+            </{alias}_url_rewrite_delete>
+        </observers>
+    </{alias}_{entity}_delete_after>
+</events>
+```
+
+#### Block Integration
+
+All generated blocks use model URL methods for consistency:
+
+```php
+// In List.php block
+public function getItemUrl($item): string
+{
+    return $item->getUrl();
+}
+
+// In sidebar blocks
+public function get{Entity}Url(${entity}): string
+{
+    return ${entity}->getUrl();
+}
+```
+
+#### Benefits
+
+1. **SEO-Friendly**: Readable URLs with keywords
+2. **Backward Compatible**: Still accepts numeric IDs
+3. **Consistent**: Centralized URL generation in models
+4. **Automatic**: URL rewrites managed by observers
+5. **Multi-Store**: Respects store context
+6. **No Manual Routing**: Uses Maho's standard systems
+
+#### Configuration Requirements
+
+To enable SEO URLs for an entity:
+1. Add `url_key` field to entity definition (type: varchar, length: 255)
+2. Optionally make it unique for better SEO
+3. Module builder handles all the rest automatically
+
+### 12. **ACL & Permissions**
 
 #### Admin Menu
 - Hierarchical menu structure
@@ -199,7 +362,7 @@ Analyzes your entities and automatically suggests relevant configuration:
 - Proper resource tree structure
 - `_isAllowed()` implementation in controllers
 
-### 9. **Code Quality**
+### 13. **Code Quality**
 
 #### Modern PHP Standards
 - PHP 8.3+ compatible
@@ -220,7 +383,7 @@ Analyzes your entities and automatically suggests relevant configuration:
 - Template-based generation
 - Clean separation of concerns
 
-### 10. **Developer Experience**
+### 14. **Developer Experience**
 
 #### Interactive Prompts
 - Namespace selection (with validation)
@@ -330,11 +493,11 @@ app/etc/modules/
 - [ ] Multi-select options
 
 ### Frontend
-- [ ] Complete frontend controllers (post view, category view, tag view)
-- [ ] SEO-friendly URL rewrites
-- [ ] Pagination implementation
-- [ ] Template rendering with actual data
-- [ ] Breadcrumbs
+- [x] Complete frontend controllers (post view, category view, tag view)
+- [x] SEO-friendly URL rewrites
+- [x] Pagination implementation
+- [x] Template rendering with actual data
+- [x] Breadcrumbs
 
 ### Additional Features
 - [ ] Sitemap.xml generation

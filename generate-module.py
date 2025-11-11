@@ -15,6 +15,7 @@ import sys
 import re
 from pathlib import Path
 from datetime import datetime
+import yaml
 
 # Import modular generators
 from lib.admin_generator import (
@@ -24,6 +25,7 @@ from lib.admin_generator import (
 )
 from lib.frontend_generator import (
     generate_frontend_controller,
+    generate_related_entity_controllers,
     generate_frontend_blocks,
     generate_frontend_templates,
     generate_frontend_layout_handles,
@@ -501,8 +503,9 @@ class {namespace}_{module}_Helper_Data extends Mage_Core_Helper_Abstract
     if not config.get('skip_frontend'):
         frontend_layout_handles = generate_frontend_layout_handles(namespace, module, entities, config)
         generate_frontend_controller(namespace, module, entities, code_path, files_created)
+        generate_related_entity_controllers(namespace, module, entities, config, code_path, files_created)
         generate_frontend_blocks(namespace, module, entities, code_path, files_created)
-        generate_sidebar_blocks(namespace, module, entities, config, code_path, files_created)
+        generate_sidebar_blocks(namespace, module, entities, config, code_path, frontend_design_path, files_created)
         generate_frontend_templates(namespace, module, entities, config, files_created)
 
     # Generate URL rewrite observer if any entity has url_key
@@ -674,7 +677,10 @@ def generate_setup_script(namespace, module, entities, year, relationships=None)
     ], 'ID')"""
 
         # Generate columns from field definitions
+        # Skip the primary key field as it's already generated above
         for field in fields:
+            if field['name'] == id_field:
+                continue  # Skip primary key - already added
             columns += "\n" + generate_column_definition(field)
 
         # Add standard columns (only if not already defined)
@@ -918,8 +924,12 @@ if __name__ == '__main__':
         print(f"Error: Config file not found: {config_file}")
         sys.exit(1)
 
+    # Support both JSON and YAML config files
     with open(config_file) as f:
-        config = json.load(f)
+        if config_file.endswith(('.yaml', '.yml')):
+            config = yaml.safe_load(f)
+        else:
+            config = json.load(f)
 
     # Use command-line namespace if provided, otherwise prompt
     if namespace_arg:

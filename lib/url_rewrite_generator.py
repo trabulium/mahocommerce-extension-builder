@@ -79,15 +79,10 @@ class {namespace}_{module}_Model_Observer_UrlRewrite
             return;
         }}
 
-        // Generate URL key if not set
-        if (!${entity_name}->getUrlKey()) {{
-            $urlKey = $this->_generateUrlKey(${entity_name});
-            ${entity_name}->setUrlKey($urlKey);
-            ${entity_name}->getResource()->saveAttribute(${entity_name}, 'url_key');
+        // Generate URL rewrite (url_key should already be set)
+        if (${entity_name}->getUrlKey()) {{
+            $this->_createUrlRewrite(${entity_name});
         }}
-
-        // Generate URL rewrite
-        $this->_createUrlRewrite(${entity_name});
     }}
 
     /**
