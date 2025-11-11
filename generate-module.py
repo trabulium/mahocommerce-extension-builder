@@ -48,6 +48,12 @@ from lib.url_rewrite_generator import (
 from lib.field_utils import normalize_field_type, is_field_required
 from lib.relationship_generator import detect_many_to_many_relationships
 from lib.core_conflicts import check_entity_conflicts, format_conflict_warning
+from lib.cron_generator import (
+    generate_cron_config_xml,
+    generate_cron_model,
+    validate_cron_config,
+    get_cron_schedule_description
+)
 
 
 def load_skill_config():
@@ -208,6 +214,21 @@ def generate_module(config, skill_config=None):
 
     print(f"Generating module: {namespace}_{module}")
     print(f"Entities: {', '.join([e['name'] for e in entities])}")
+
+    # Validate and display cron jobs
+    crons = config.get('crons', [])
+    if crons:
+        cron_errors = validate_cron_config(crons)
+        if cron_errors:
+            print("\n❌ CRON CONFIGURATION ERRORS:\n")
+            for error in cron_errors:
+                print(f"  - {error}")
+            sys.exit(1)
+
+        print(f"Cron Jobs: {len(crons)}")
+        for cron in crons:
+            schedule_desc = get_cron_schedule_description(cron.get('schedule', '0 2 * * *'))
+            print(f"  - {cron['name']}: {schedule_desc}")
 
     # Get deployment path early for conflict checking
     deployment_root = get_deployment_path(skill_config)
@@ -518,7 +539,8 @@ def generate_module(config, skill_config=None):
             </{namespace.lower()}_{module.lower()}>
         </menu>
     </adminhtml>
-</config>
+
+{generate_cron_config_xml(namespace, module, crons)}</config>
 """
     (etc_path / "config.xml").write_text(config_xml)
     files_created.append(str(etc_path / "config.xml"))
@@ -592,6 +614,15 @@ class {namespace}_{module}_Helper_Data extends Mage_Core_Helper_Abstract
 """
     (helpers_path / "Data.php").write_text(helper_data)
     files_created.append(str(helpers_path / "Data.php"))
+
+    # 4.5. Cron Observer Model (if crons defined)
+    if crons:
+        print("[4.5] Creating cron observer...")
+        models_path.mkdir(parents=True, exist_ok=True)
+        observer_code = generate_cron_model(namespace, module, crons)
+        if observer_code:
+            (models_path / "Observer.php").write_text(observer_code)
+            files_created.append(str(models_path / "Observer.php"))
 
     # 5. Generate files for each entity
     print(f"\n[5] Generating {len(entities)} entities...")

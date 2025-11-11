@@ -1,0 +1,45 @@
+{
+  "module": "CronExample",
+  "frontend_route": "cronexample",
+  "menu_title": "Cron Example",
+  "menu_sort": 90,
+  "crons": [
+    {
+      "name": "cleanup",
+      "schedule": "0 2 * * *",
+      "description": "Clean up old log entries"
+    },
+    {
+      "name": "sync",
+      "schedule": "*/15 * * * *",
+      "description": "Sync data with external API"
+    },
+    {
+      "name": "report",
+      "schedule": "0 0 1 * *",
+      "description": "Generate monthly reports"
+    }
+  ],
+  "entities": [
+    {
+      "name": "log",
+      "title": "Log Entry",
+      "label": "View Logs",
+      "fields": [
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "label": "Log Message"
+        },
+        {
+          "name": "level",
+          "type": "varchar",
+          "length": 20,
+          "default": "info",
+          "label": "Log Level"
+        }
+      ]
+    }
+  ]
+}
