@@ -1,0 +1,224 @@
+{
+  "module": "TestBlog",
+  "frontend_route": "testblog",
+  "menu_title": "Blog",
+  "menu_sort": 80,
+  "relationships": [
+    {
+      "entity1": "post",
+      "entity2": "category",
+      "type": "many_to_many"
+    },
+    {
+      "entity1": "post",
+      "entity2": "tag",
+      "type": "many_to_many"
+    }
+  ],
+  "entities": [
+    {
+      "name": "post",
+      "title": "Blog Post",
+      "label": "Manage Posts",
+      "multi_store": true,
+      "fields": [
+        {
+          "name": "title",
+          "type": "varchar",
+          "length": 255,
+          "required": true,
+          "label": "Post Title",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "url_key",
+          "type": "varchar",
+          "length": 255,
+          "unique": true,
+          "label": "SEO URL Key",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "excerpt",
+          "type": "varchar",
+          "length": 500,
+          "nullable": true,
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "author_id",
+          "type": "int",
+          "label": "Author",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "featured_image",
+          "type": "varchar",
+          "length": 255,
+          "nullable": true,
+          "label": "Featured Image",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "is_published",
+          "type": "tinyint",
+          "default": 0,
+          "label": "Published",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp",
+          "nullable": true,
+          "label": "Publish Date",
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "meta_title",
+          "type": "varchar",
+          "length": 255,
+          "nullable": true,
+          "label": "SEO Title",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        },
+        {
+          "name": "meta_description",
+          "type": "varchar",
+          "length": 500,
+          "nullable": true,
+          "label": "Meta Description",
+          "admin": {
+            "grid": false,
+            "form": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "category",
+      "title": "Category",
+      "label": "Manage Categories",
+      "fields": [
+        {
+          "name": "name",
+          "type": "varchar",
+          "length": 255,
+          "required": true,
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "url_key",
+          "type": "varchar",
+          "length": 255,
+          "unique": true,
+          "label": "SEO URL Key"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "title": "Tag",
+      "label": "Manage Tags",
+      "fields": [
+        {
+          "name": "name",
+          "type": "varchar",
+          "length": 100,
+          "required": true,
+          "admin": {
+            "grid": true,
+            "form": true
+          }
+        },
+        {
+          "name": "url_key",
+          "type": "varchar",
+          "length": 255,
+          "unique": true,
+          "label": "SEO URL Key"
+        }
+      ]
+    },
+    {
+      "name": "author",
+      "title": "Author",
+      "label": "Manage Authors",
+      "fields": [
+        {
+          "name": "name",
+          "type": "varchar",
+          "length": 255,
+          "required": true
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "length": 255,
+          "unique": true,
+          "required": true,
+          "label": "Email Address"
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "nullable": true,
+          "label": "Biography"
+        },
+        {
+          "name": "avatar",
+          "type": "varchar",
+          "length": 255,
+          "nullable": true,
+          "label": "Profile Picture"
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "default": 1,
+          "label": "Active"
+        }
+      ]
+    }
+  ]
+}

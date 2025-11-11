@@ -3,7 +3,7 @@
   "namespace": "Maho",
   "version": "24.11.0",
   "description": "Recipe management module for Maho",
-  "frontend_route": "recipes",
+  "frontend_route": "recipe",
   "entities": [
     {
       "name": "recipe",

@@ -6,6 +6,7 @@ Copyright (c) 2025 Maho (https://mahocommerce.com)
 
 from pathlib import Path
 from datetime import datetime
+from .field_utils import get_field_label, should_show_in_grid, should_show_in_form, normalize_field_type
 
 
 def generate_admin_controller(namespace, module, entity_name, entity_class, fields, code_path, files_created):
@@ -252,7 +253,7 @@ class {namespace}_{module}_Adminhtml_{entity_class}Controller extends Mage_Admin
     files_created.append(str(controller_file))
 
 
-def generate_admin_blocks(namespace, module, entity, all_entities, code_path, files_created):
+def generate_admin_blocks(namespace, module, entity, all_entities, code_path, files_created, relationships=None):
     """
     Generate admin block files (Grid, Edit, Form)
 
@@ -263,7 +264,9 @@ def generate_admin_blocks(namespace, module, entity, all_entities, code_path, fi
         all_entities: List of all entities (for relationships)
         code_path: Path to module root
         files_created: List to append created files to
+        relationships: List of many-to-many relationship tuples
     """
+    relationships = relationships or []
     year = datetime.now().year
     entity_name = entity['name']
     entity_class = entity_name.capitalize()
@@ -301,22 +304,26 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class} extends Mage_Adminhtml
     # 2. Grid block
     grid_file = block_path / "Grid.php"
 
-    # Build grid columns from fields
+    # Build grid columns from fields - use intelligent detection
     grid_columns = ""
+
+    # Always add ID column first
+    grid_columns += f"""
+        $this->addColumn('{entity_name}_id', [
+            'header' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('ID'),
+            'width' => '50px',
+            'index' => '{entity_name}_id',
+        ]);
+"""
+
     for field in fields:
-        # Check if field should be shown in grid
-        show_in_grid = field.get('admin', {}).get('grid', False)
-
-        # Always show ID field
-        if field['name'] == f"{entity_name}_id":
-            show_in_grid = True
-
-        if not show_in_grid:
+        # Use intelligent grid visibility detection (supports admin.grid config)
+        if not should_show_in_grid(field):
             continue
 
         field_name = field['name']
-        field_label = field.get('label', field_name.replace('_', ' ').title())
-        field_type = field.get('type', 'varchar')
+        field_label = get_field_label(field)  # Smart label generation
+        field_type = normalize_field_type(field.get('type', 'varchar'))
 
         # Determine column type and options
         column_config = f"""
@@ -340,8 +347,8 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class} extends Mage_Adminhtml
                 column_config += f"""
             'type' => 'options',
             'options' => Mage::getResourceModel('{namespace.lower()}_{module.lower()}/{related_entity}_collection')->toOptionHash(),"""
-        # Boolean fields - is_, allow_, enable_, has_ prefixes or smallint
-        elif field_name.startswith(('is_', 'allow_', 'enable_', 'has_')) or (field_type in ['smallint', 'tinyint'] and field_name != 'status'):
+        # Boolean fields - is_, allow_, enable_, has_ prefixes or smallint (tinyint normalized to smallint)
+        elif field_name.startswith(('is_', 'allow_', 'enable_', 'has_')) or (field_type == 'smallint' and field_name != 'status'):
             column_config += """
             'type' => 'options',
             'options' => ['1' => 'Yes', '0' => 'No'],"""
@@ -501,18 +508,13 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
     wysiwyg_fields = []
 
     for field in fields:
-        # Skip system fields
-        if field['name'] in [f"{entity_name}_id", 'created_at', 'updated_at']:
-            continue
-
-        # Check if field should be shown in form
-        show_in_form = field.get('admin', {}).get('form', True)
-        if not show_in_form:
+        # Use intelligent form visibility detection (supports admin.form config)
+        if not should_show_in_form(field):
             continue
 
         field_name = field['name']
-        field_label = field.get('label', field_name.replace('_', ' ').title())
-        field_db_type = field.get('type', 'varchar')
+        field_label = get_field_label(field)  # Smart label generation
+        field_db_type = normalize_field_type(field.get('type', 'varchar'))
 
         # Detect field type based on name and db type
         field_type = 'text'
@@ -548,8 +550,8 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
             if any(e['name'] == related_entity for e in all_entities):
                 field_type = 'select'
                 field_options['values'] = f"Mage::getResourceModel('{namespace.lower()}_{module.lower()}/{related_entity}_collection')->toOptionArray()"
-        # Boolean detection - is_, allow_, enable_, has_ prefixes or smallint type
-        elif field_name.startswith(('is_', 'allow_', 'enable_', 'has_')) or (field_db_type in ['smallint', 'tinyint'] and field_name != 'status'):
+        # Boolean detection - is_, allow_, enable_, has_ prefixes or smallint type (tinyint normalized to smallint)
+        elif field_name.startswith(('is_', 'allow_', 'enable_', 'has_')) or (field_db_type == 'smallint' and field_name != 'status'):
             field_type = 'select'
             field_options['values'] = "array(['value' => 1, 'label' => 'Yes'], ['value' => 0, 'label' => 'No'])"
         # Status field
@@ -603,12 +605,16 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
         # Get field name (may be overridden for multiselect)
         actual_field_name = field_options.get('name', f"'{field_name}'")
 
+        # Use is_field_required() for proper required/nullable handling
+        from .field_utils import is_field_required
+        required = is_field_required(field)
+
         form_fields += f"""
         $fieldset->addField('{field_name}', '{field_type}', [
             'name' => {actual_field_name},
             'label' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('{field_label}'),
             'title' => Mage::helper('{namespace.lower()}_{module.lower()}')->__('{field_label}'),
-            'required' => {str(not field.get('nullable', True)).lower()},"""
+            'required' => {str(required).lower()},"""
 
         # Add field-specific options
         for opt_key, opt_value in field_options.items():
@@ -631,6 +637,14 @@ class {namespace}_{module}_Block_Adminhtml_{entity_class}_Edit extends Mage_Admi
 
         form_fields += """
         ]);"""
+
+    # Add many-to-many relationship fields
+    from .relationship_generator import generate_relationship_form_fields
+    relationship_fields = generate_relationship_form_fields(
+        namespace, module, entity_name, relationships, all_entities
+    )
+    if relationship_fields:
+        form_fields += relationship_fields
 
     # Add multistore selector if enabled
     if entity.get('multi_store', False):

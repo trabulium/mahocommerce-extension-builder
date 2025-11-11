@@ -4,11 +4,20 @@ A complete, intelligent CRUD module generator for Maho Commerce that creates pro
 
 ## Core Features
 
-### 1. **Declarative JSON Configuration**
-- Define entire modules using simple JSON config
+### 1. **Declarative JSON/YAML Configuration**
+- Define entire modules using simple JSON or YAML config
 - Specify entities, fields, relationships in a clean format
 - Automatic validation and defaults application
 - Support for multiple entities per module
+- YAML-based skill configuration for deployment automation
+
+### 1.5. **Automated Deployment** ⭐ NEW
+- Automatic deployment to web root (no manual file copying)
+- Auto-run `composer dump-autoload` after generation
+- Auto-flush Maho cache for immediate availability
+- Configurable deployment paths via `config.yaml`
+- Force overwrite for generated modules (protects manual work)
+- Module identification markers in XML
 
 ### 2. **Intelligent Entity Generation**
 

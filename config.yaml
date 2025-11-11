@@ -1,0 +1,44 @@
+# Maho Module Builder Configuration
+
+# Deployment settings
+deployment:
+  # Target path for generated modules (relative to this config file or absolute)
+  # If empty or not set, generates in skill's app/ directory (requires manual deployment)
+  target_path: "../../../"  # Points to web root (/var/www/dev.tenniswarehouse.com.au/web/)
+
+  # Auto-deploy after generation
+  auto_deploy: true
+
+  # Run composer dump-autoload after deployment
+  auto_composer: true
+
+  # Flush Maho cache after deployment
+  auto_flush_cache: true
+
+# Generator defaults
+defaults:
+  # Default namespace if not specified
+  namespace: "Maho"
+
+  # Default code pool (core, local, community)
+  code_pool: "core"
+
+  # Enable multi-store support by default
+  multi_store: false
+
+  # Generate frontend scaffolding by default
+  generate_frontend: true
+
+  # Generate system configuration by default
+  generate_system_config: true
+
+# Path configuration
+paths:
+  # Maho CLI path (for cache flushing, etc.)
+  maho_cli: "./maho"
+
+  # Composer path
+  composer: "composer"
+
+  # Allow composer superuser
+  composer_allow_superuser: true
